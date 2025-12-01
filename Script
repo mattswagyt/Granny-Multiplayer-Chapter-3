@@ -1,0 +1,559 @@
+-- Roblox Lua Script for "Granny Multiplayer - Chapter 3" Map (By BMF)
+-- Script handles a draggable UI with multiple functionalities
+
+-- Variables
+local Players = game:GetService("Players")
+local Lighting = game:GetService("Lighting")
+local StarterGui = game:GetService("StarterGui")
+local UIS = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+-- Create UI Elements
+local ScreenGui = Instance.new("ScreenGui")
+local MainFrame = Instance.new("Frame")
+local Title = Instance.new("TextLabel")
+local LocationLabel = Instance.new("TextLabel")
+local ErrorLog = Instance.new("TextLabel")
+local UIListLayout = Instance.new("UIListLayout")
+
+-- UI Properties
+ScreenGui.Parent = PlayerGui
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Name = "GrannyUI"
+
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MainFrame.Size = UDim2.new(0, 300, 0, 400)
+MainFrame.Position = UDim2.new(0.5, -150, 0.5, -200)
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Visible = true
+
+Title.Parent = MainFrame
+Title.Text = "Granny Multiplayer - Chapter 1 (By BMF)"
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Font = Enum.Font.SourceSansBold
+Title.TextSize = 18
+
+ErrorLog.Parent = MainFrame
+ErrorLog.Text = "Error Log: None"
+ErrorLog.Size = UDim2.new(1, 0, 0, 30)
+ErrorLog.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+ErrorLog.TextColor3 = Color3.fromRGB(255, 85, 85)
+ErrorLog.Font = Enum.Font.SourceSans
+ErrorLog.TextSize = 14
+ErrorLog.TextWrapped = true
+ErrorLog.TextYAlignment = Enum.TextYAlignment.Top
+
+UIListLayout.Parent = MainFrame
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+-- Toggle UI with Delete key
+UIS.InputBegan:Connect(function(input, processed)
+    if not processed and input.KeyCode == Enum.KeyCode.Delete then
+        MainFrame.Visible = not MainFrame.Visible
+    end
+end)
+
+-- Function to Create Buttons
+local function createButton(name, callback)
+    local Button = Instance.new("TextButton")
+    Button.Parent = MainFrame
+    Button.Text = name
+    Button.Size = UDim2.new(1, 0, 0, 30)
+    Button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Button.Font = Enum.Font.SourceSans
+    Button.TextSize = 16
+    Button.MouseButton1Click:Connect(function()
+        pcall(callback)
+    end)
+    return Button
+end
+
+createButton("Infinite Yield", function()
+    local success, result = pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+    end)
+    if success then
+        print("Infinite Yield executed!")
+    else
+        print("Error executing Infinite Yield")
+    end
+end)
+
+createButton("Dex Explorer", function()
+    local success, result = pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/infyiff/backup/main/dex.lua"))()
+    end)
+    if success then
+        print("Dex Explorer executed!")
+    else
+        print("Error executing Dex Explorer")
+    end
+end)
+
+-- ✅ Notification when script loads
+StarterGui:SetCore("SendNotification", {
+    Title = "Granny Script Loaded!";
+    Text = "All features are ready.";
+    Duration = 10;
+})
+
+-- ✅ ESP helper
+local function highlightTarget(target, color)
+    local highlight = Instance.new("Highlight")
+    highlight.Adornee = target
+    highlight.FillColor = color
+    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+    highlight.FillTransparency = 0.5
+    highlight.OutlineTransparency = 0
+    highlight.Parent = target
+end
+
+-- ✅ Tracer helper
+local function createTracer(target, color)
+    local RunService = game:GetService("RunService")
+    local camera = workspace.CurrentCamera
+    local line = Drawing.new("Line")
+    line.Visible = true
+    line.Color = color
+    line.Thickness = 2
+
+    -- Update tracer position every frame
+    local connection
+    connection = RunService.RenderStepped:Connect(function()
+        if target and target:FindFirstChild("HumanoidRootPart") and target:FindFirstChildOfClass("Humanoid") then
+            local hrp = target:FindFirstChild("HumanoidRootPart")
+            local pos, onScreen = camera:WorldToViewportPoint(hrp.Position)
+            if onScreen then
+                line.From = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y) -- from bottom center of screen
+                line.To = Vector2.new(pos.X, pos.Y)
+                line.Visible = true
+            else
+                line.Visible = false
+            end
+        else
+            line.Visible = false
+            connection:Disconnect()
+            line:Remove()
+        end
+    end)
+end
+
+-- ✅ Floating Name helper
+local function createNameTag(target, text, color)
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "NameTag"
+    billboard.Size = UDim2.new(0, 200, 0, 50)
+    billboard.StudsOffset = Vector3.new(0, 3, 0)
+    billboard.AlwaysOnTop = true
+    billboard.MaxDistance = 500
+    billboard.Parent = target
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = color
+    label.TextStrokeTransparency = 0
+    label.TextScaled = true
+    label.Font = Enum.Font.SourceSansBold
+    label.Parent = billboard
+end
+
+-- ✅ Granny ESP
+createButton("Granny ESP", function()
+    local granny = nil
+
+    -- Search Preset1 to Preset10 for "Granny"
+    for i = 1, 10 do
+        local preset = workspace:FindFirstChild("Preset"..i)
+        if preset and preset:FindFirstChild("Granny") then
+            granny = preset.Granny
+            break
+        end
+    end
+
+    if granny then
+        -- Add Highlight if missing
+        if not granny:FindFirstChildOfClass("Highlight") then
+            local highlight = Instance.new("Highlight")
+            highlight.Name = "GrannyESP"
+            highlight.Parent = granny
+            highlight.Adornee = granny
+            highlight.FillTransparency = 1
+            highlight.OutlineTransparency = 0
+            highlight.OutlineColor = Color3.fromRGB(255, 0, 0)
+            highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        end
+
+        -- Create tracer line
+        createTracer(granny, Color3.fromRGB(255, 0, 0))
+
+        -- Create name tag
+        if not granny:FindFirstChild("NameTag") then
+            createNameTag(granny, "Granny", Color3.fromRGB(255, 0, 0))
+        end
+
+    else
+        ErrorLog.Text = "Error Log: Granny not found in Preset1 to Preset10"
+    end
+end)
+
+-- ✅ Grandpa ESP
+createButton("Grandpa ESP", function()
+    local grandpa = nil
+
+    -- Search Preset1 to Preset10
+    for i = 1, 10 do
+        local preset = workspace:FindFirstChild("Preset"..i)
+        if preset and preset:FindFirstChild("Grandpa") then
+            grandpa = preset.Grandpa
+            break
+        end
+    end
+
+    if grandpa then
+        -- Add Highlight if missing
+        if not grandpa:FindFirstChildOfClass("Highlight") then
+            local highlight = Instance.new("Highlight")
+            highlight.Name = "GrandpaESP"
+            highlight.Parent = grandpa
+            highlight.Adornee = grandpa
+            highlight.FillTransparency = 1
+            highlight.OutlineTransparency = 0
+            highlight.OutlineColor = Color3.fromRGB(0, 255, 0)
+            highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        end
+
+        -- Tracer
+        createTracer(grandpa, Color3.fromRGB(0, 255, 0))
+
+        -- Name Tag
+        if not grandpa:FindFirstChild("NameTag") then
+            createNameTag(grandpa, "Grandpa", Color3.fromRGB(0, 255, 0))
+        end
+    else
+        ErrorLog.Text = "Error Log: Grandpa not found in Preset1 to Preset10"
+    end
+end)
+
+-- ✅ Slendrina ESP
+createButton("Slendrina ESP", function()
+    local slendrina = nil
+
+    -- Search Preset1 to Preset10
+    for i = 1, 10 do
+        local preset = workspace:FindFirstChild("Preset"..i)
+        if preset and preset:FindFirstChild("Slendrina") then
+            slendrina = preset.Slendrina
+            break
+        end
+    end
+
+    if slendrina then
+        -- Add Highlight if missing
+        if not slendrina:FindFirstChildOfClass("Highlight") then
+            local highlight = Instance.new("Highlight")
+            highlight.Name = "SlendrinaESP"
+            highlight.Parent = slendrina
+            highlight.Adornee = slendrina
+            highlight.FillTransparency = 1
+            highlight.OutlineTransparency = 0
+            highlight.OutlineColor = Color3.fromRGB(255, 105, 180) -- Pink
+            highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        end
+
+        -- Tracer
+        createTracer(slendrina, Color3.fromRGB(255, 105, 180)) -- Pink
+
+        -- Name Tag
+        if not slendrina:FindFirstChild("NameTag") then
+            createNameTag(slendrina, "Slendrina", Color3.fromRGB(255, 105, 180))
+        end
+
+    else
+        ErrorLog.Text = "Error Log: Slendrina not found in Preset1 to Preset10"
+    end
+end)
+
+-- ✅ Item ESP for Granny Chapter 3
+createButton("Item ESP", function()
+    local itemNames = {
+        "Accelerator","Coconut","Electric Switch","Firewood","Fuse","Generator cable",
+        "Lock pick","Safe key","Shed key","Slingshot","Train key",
+        "Weapon key","Matches","Plank","Teddy"
+    }
+
+     for i = 1, 5 do
+        local preset = workspace:FindFirstChild("Preset" .. i)
+        if preset then
+            for _, name in ipairs(itemNames) do
+                local item = preset:FindFirstChild(name)
+                if item then
+                    -- Check for and apply Highlight
+                    if not item:FindFirstChildOfClass("Highlight") then
+                        local highlight = Instance.new("Highlight")
+                        highlight.Name = "ItemESP"
+                        highlight.Adornee = item
+                        highlight.Parent = item
+                        highlight.FillTransparency = 1 -- Outline only
+                        highlight.OutlineTransparency = 0
+                        highlight.OutlineColor = Color3.fromRGB(0, 255, 0) -- Green
+                        highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop -- X-ray
+                    end
+
+                    -- Check for and apply BillboardGui for name text
+                    if not item:FindFirstChild("ItemLabel") then
+                        local billboard = Instance.new("BillboardGui")
+                        billboard.Name = "ItemLabel"
+                        billboard.Size = UDim2.new(0, 200, 0, 50)
+                        billboard.AlwaysOnTop = true
+                        billboard.StudsOffset = Vector3.new(0, 2, 0)
+                        billboard.Adornee = item
+                        billboard.Parent = item
+
+                        local label = Instance.new("TextLabel")
+                        label.Size = UDim2.new(1, 0, 1, 0)
+                        label.BackgroundTransparency = 1
+                        label.TextColor3 = Color3.fromRGB(255, 255, 255)
+                        label.TextStrokeTransparency = 0
+                        label.Text = name
+                        label.TextScaled = true
+                        label.Font = Enum.Font.GothamBold
+                        label.Parent = billboard
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- ✅ Get All Items
+createButton("Get All Items", function()
+    local player = game.Players.LocalPlayer
+    local backpack = player:FindFirstChild("Backpack")
+    local character = player.Character or player.CharacterAdded:Wait()
+
+    -- ✅ Helper: check if player already has tool
+    local function hasTool(toolName)
+        return backpack:FindFirstChild(toolName) or character:FindFirstChild(toolName)
+    end
+
+    -- ✅ Helper: try to fire or clone item
+    local function obtainItem(item)
+        if not item then return end
+        if item:FindFirstChild("InteractRemote") then
+            item.InteractRemote:FireServer(player)
+            print("Picked up via InteractRemote:", item.Name)
+        elseif item:IsA("Tool") then
+            local clone = item:Clone()
+            clone.Parent = backpack
+            print("Manually cloned tool:", item.Name)
+        else
+            print("⚠️ Unable to pick up item:", item.Name)
+        end
+        task.wait(0.1)
+    end
+
+for i = 1, 10 do
+        local preset = workspace:FindFirstChild("Preset" .. i)
+        if preset then
+            for _, item in pairs(preset:GetChildren()) do
+                if item:FindFirstChild("InteractRemote") then
+                    obtainItem(item)
+                end
+            end
+        end
+    end
+
+createButton("Infinite Ammo", function()
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+    local ammo1 = LocalPlayer.Backpack:FindFirstChild("StunGunAmmo")
+    local ammo2 = LocalPlayer.Backpack:FindFirstChild("ShotgunAmmo")
+
+    if ammo1 or ammo2 then
+        -- Keep ammo at 1 forever
+        task.spawn(function()
+            while true do
+                if ammo1 and ammo1.Value ~= 1 then
+                    ammo1.Value = 1
+                end
+                if ammo2 and ammo2.Value ~= 1 then
+                    ammo2.Value = 1
+                end
+                task.wait(0.1)
+            end
+        end)
+
+        print("Infinite Ammo enabled!")
+
+        -- Updated Notification
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "🔫 Infinite Ammo Enabled",
+            Text = "Your stun gun & shotgun ammo will both stay at 1 forever.",
+            Duration = 5
+        })
+    else
+        warn("Error: StunGunAmmo or ShotgunAmmo not found in LocalPlayer.Backpack")
+    end
+end)
+
+createButton("No Beartraps", function()
+    local found = false
+
+    for i = 1, 10 do
+        local preset = workspace:FindFirstChild("Preset" .. i)
+        if preset and preset:FindFirstChild("Locks") then
+            local locks = preset.Locks
+            if locks:FindFirstChild("Granny") then
+                local granny = locks.Granny
+                local beartrap = granny:FindFirstChild("BeartrapSpawn")
+
+                if beartrap then
+                    beartrap:Destroy()
+                    ErrorLog.Text = "Error Log: Beartraps removed! (Preset" .. i .. ")"
+                    found = true
+                    break
+                end
+            end
+        end
+    end
+
+    if not found then
+        ErrorLog.Text = "Error Log: BeartrapSpawn not found in any preset"
+    end
+end)
+
+-- ✅ Granny Ignores You
+createButton("Granny Ignores You", function()
+    local granny = nil
+    local foundPresetIndex = nil
+
+    -- Search Preset1 to Preset10 for Granny
+    for i = 1, 10 do
+        local preset = workspace:FindFirstChild("Preset"..i)
+        if preset and preset:FindFirstChild("Granny") then
+            granny = preset.Granny
+            foundPresetIndex = i
+            break
+        end
+    end
+
+    if granny then
+        -- Destroy all jumpscare objects
+        for _, name in ipairs({"CameraJumpscare1", "CameraJumpscare2", "Jumpscare"}) do
+            local obj = granny:FindFirstChild(name)
+            if obj then obj:Destroy() end
+        end
+
+        -- Destroy attack script / module
+        local attack = granny:FindFirstChild("Attack")
+        if attack then attack:Destroy() end
+
+        print("Granny will now ignore you!")
+    else
+        ErrorLog.Text = "Error Log: Granny not found in Preset1 to Preset10."
+    end
+end)
+
+
+
+-- ✅ Grandpa Ignores You
+createButton("Grandpa Ignores You", function()
+    local grandpa = nil
+    local foundPresetIndex = nil
+
+    -- Search Preset1 to Preset10 for Grandpa
+    for i = 1, 10 do
+        local preset = workspace:FindFirstChild("Preset"..i)
+        if preset and preset:FindFirstChild("Grandpa") then
+            grandpa = preset.Grandpa
+            foundPresetIndex = i
+            break
+        end
+    end
+
+    if grandpa then
+        -- Destroy all jumpscare objects
+        for _, name in ipairs({"CameraJumpscare1", "CameraJumpscare2", "Jumpscare"}) do
+            local obj = grandpa:FindFirstChild(name)
+            if obj then obj:Destroy() end
+        end
+
+        -- Destroy attack script
+        local attack = grandpa:FindFirstChild("Attack")
+        if attack then attack:Destroy() end
+
+        print("Grandpa will now ignore you!")
+    else
+        ErrorLog.Text = "Error Log: Grandpa not found in Preset1 to Preset10."
+    end
+end)
+
+createButton("Remove Slendrina", function()
+    local slendrina = nil
+    local foundPresetIndex = nil
+
+    -- Search Preset1 to Preset10 for Slendrina
+    for i = 1, 10 do
+        local preset = workspace:FindFirstChild("Preset"..i)
+        if preset and preset:FindFirstChild("Slendrina") then
+            slendrina = preset.Slendrina
+            foundPresetIndex = i
+            break
+        end
+    end
+
+    -- Also check Preset -i like you said
+    if not slendrina then
+        local presetNeg = workspace:FindFirstChild("Preset -i")
+        if presetNeg and presetNeg:FindFirstChild("Slendrina") then
+            slendrina = presetNeg.Slendrina
+            foundPresetIndex = "-i"
+        end
+    end
+
+    -- If found, remove her
+    if slendrina then
+        slendrina:Destroy()
+        print("Removed Slendrina from Preset"..tostring(foundPresetIndex))
+    else
+        ErrorLog.Text = "Error Log: Slendrina not found in any preset"
+    end
+end)
+
+createButton("Outside", function()
+    LocalPlayer.Character:PivotTo(CFrame.new(2, 11, -48))
+end)
+
+createButton("Jail Cell (Spawn)", function()
+    LocalPlayer.Character:PivotTo(CFrame.new(-26, 3, -38))
+end)
+
+createButton("Train", function()
+    LocalPlayer.Character:PivotTo(CFrame.new(-31, -7, -36))
+end)
+
+createButton("Escape", function()
+    LocalPlayer.Character:PivotTo(CFrame.new(21, 11, -97))
+end)
+
+-- ✅ Full Bright
+createButton("Full Bright", function()
+    Lighting.Ambient = Color3.new(1, 1, 1)
+    Lighting.Brightness = 3
+    Lighting.FogEnd = 100000
+    Lighting.ClockTime = 14
+end)
+
+-- ✅ Unlock Camera
+createButton("Unlock Camera", function()
+    LocalPlayer.CameraMaxZoomDistance = 1000
+    LocalPlayer.CameraMinZoomDistance = 0.5
+end)
