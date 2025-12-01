@@ -31,7 +31,7 @@ MainFrame.Draggable = true
 MainFrame.Visible = true
 
 Title.Parent = MainFrame
-Title.Text = "Granny Multiplayer - Chapter 1 (By BMF)"
+Title.Text = "Granny Multiplayer - Chapter 3 (By BMF)"
 Title.Size = UDim2.new(1, 0, 0, 30)
 Title.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
