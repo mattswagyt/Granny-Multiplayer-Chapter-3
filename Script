@@ -339,12 +339,12 @@ createButton("Get All Items", function()
     local backpack = player:FindFirstChild("Backpack")
     local character = player.Character or player.CharacterAdded:Wait()
 
-    -- ✅ Helper: check if player already has tool
+    -- Helper: check if player already has tool
     local function hasTool(toolName)
         return backpack:FindFirstChild(toolName) or character:FindFirstChild(toolName)
     end
 
-    -- ✅ Helper: try to fire or clone item
+    -- Helper: try to fire or clone item
     local function obtainItem(item)
         if not item then return end
         if item:FindFirstChild("InteractRemote") then
@@ -360,7 +360,8 @@ createButton("Get All Items", function()
         task.wait(0.1)
     end
 
-for i = 1, 10 do
+    -- Loop through Preset1–Preset10
+    for i = 1, 10 do
         local preset = workspace:FindFirstChild("Preset" .. i)
         if preset then
             for _, item in pairs(preset:GetChildren()) do
@@ -370,6 +371,12 @@ for i = 1, 10 do
             end
         end
     end
+end) -- ✅ THIS END WAS MISSING
+
+
+-- =================================================================================
+-- ✅ Infinite Ammo (correct placement, OUTSIDE the Get All Items function)
+-- =================================================================================
 
 createButton("Infinite Ammo", function()
     local Players = game:GetService("Players")
@@ -393,14 +400,13 @@ createButton("Infinite Ammo", function()
 
         print("Infinite Ammo enabled!")
 
-        -- Updated Notification
         game.StarterGui:SetCore("SendNotification", {
             Title = "🔫 Infinite Ammo Enabled",
-            Text = "Your stun gun & shotgun ammo will both stay at 1 forever.",
+            Text = "Your stun gun & shotgun ammo will stay at 1 forever.",
             Duration = 5
         })
     else
-        warn("Error: StunGunAmmo or ShotgunAmmo not found in LocalPlayer.Backpack")
+        warn("Error: StunGunAmmo or ShotgunAmmo not found in backpack.")
     end
 end)
 
